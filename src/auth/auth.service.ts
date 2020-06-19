@@ -4,11 +4,13 @@ import {
   AuthenticationDetails,
   CognitoUser,
   CognitoUserPool,
+  CognitoUserAttribute,
 } from 'amazon-cognito-identity-js';
 
 @Injectable()
 export class AuthService {
   private userPool: CognitoUserPool;
+  private sessionUserAttributes: {};
   constructor(
     @Inject('AuthConfig')
     private readonly authConfig: AuthConfig,
@@ -19,10 +21,31 @@ export class AuthService {
     });
   }
 
+  registerUser(registerRequest: {
+    name: string;
+    email: string;
+    password: string;
+  }) {
+    const { name, email, password } = registerRequest;
+    return new Promise((resolve, reject) => {
+      return this.userPool.signUp(
+        name,
+        password,
+        [new CognitoUserAttribute({ Name: 'email', Value: email })],
+        null,
+        (err, result) => {
+          if (!result) {
+            reject(err);
+          } else {
+            resolve(result.user);
+          }
+        },
+      );
+    });
+  }
+
   authenticateUser(user: { name: string; password: string }) {
     const { name, password } = user;
-
-    console.log(name, password);
 
     const authenticationDetails = new AuthenticationDetails({
       Username: name,
